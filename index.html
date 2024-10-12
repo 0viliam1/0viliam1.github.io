@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Клікер Гра</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to bottom, #000000, #66ff66);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+        }
+        .container {
+            text-align: center;
+            position: relative;
+        }
+        .floating-image {
+            width: 300px; /* Збільшено розмір малюнка */
+            animation: float 2s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .money-display, .dragon-health {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 20px;
+            color: white;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            margin: 5px;
+        }
+        .button:hover {
+            transform: scale(1.05);
+            background-color: darkred;
+        }
+        .food-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px;
+        }
+        .food-button {
+            padding: 10px 15px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .food-button:hover {
+            background-color: darkblue;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="C:\Users\User\Downloads\1грн.jpg" alt="Клікайте!" class="floating-image" id="clickableImage">
+        <div class="money-display">Гривень: <span id="moneyCount">0</span></div>
+        <button class="button" id="upgradeButton" onclick="buyUpgrade()">Купити апгрейд (+1 за 100 грн)</button>
+        <button class="button" id="autoclickerButton" onclick="buyAutoclicker()" style="display: none;">Купити автоклікер (1000 грн)</button>
+        <div class="dragon-health">Здоров'я дракона: <span id="dragonHealth">100</span></div>
+        <img src="C:\Users\User\Downloads\dragon.jpg" alt="Дракон" id="dragonImage" width="150">
+        
+        <div class="food-container">
+            <button class="food-button" onclick="feedDragon(50)">Їжа за 50 грн (+20 здоров'я)</button>
+            <button class="food-button" onclick="feedDragon(100)">Їжа за 100 грн (+50 здоров'я)</button>
+            <button class="food-button" onclick="feedDragon(200)">Їжа за 200 грн (+100 здоров'я)</button>
+        </div>
+    </div>
+
+    <script>
+        let moneyCount = 0;
+        let upgradeLevel = 0; // 0: +1, 1: +2, 2: +5, 3: +10
+        let dragonHealth = 100;
+        let autoclickerActive = false;
+        let autoclickerInterval;
+        let dragonFeedTimer;
+        let dragonHealthDecayInterval;
+
+        const upgradeCosts = [100, 300, 500]; // Вартість апгрейдів
+        const healthCost = [50, 100, 200]; // Вартість їжі
+
+        function addCounter() {
+            const clickAmounts = [1, 2, 5, 10]; // Кількість грошей за клік
+            const amount = clickAmounts[upgradeLevel] || 1; // За умовчанням +1
+            moneyCount += amount;
+            document.getElementById('moneyCount').innerText = moneyCount;
+
+            // Змінюємо фон на зелений на 0.5 секунди
+            document.body.style.transition = "background-color 0.5s";
+            document.body.style.backgroundColor = "rgba(51, 204, 51, 0.8)";
+            setTimeout(() => {
+                document.body.style.backgroundColor = "linear-gradient(to bottom, #000000, #66ff66)";
+            }, 500);
+        }
+
+        function buyUpgrade() {
+            if (moneyCount >= upgradeCosts[upgradeLevel]) {
+                moneyCount -= upgradeCosts[upgradeLevel];
+                document.getElementById('moneyCount').innerText = moneyCount;
+
+                upgradeLevel++;
+                updateImage();
+
+                if (upgradeLevel < upgradeCosts.length) {
+                    document.getElementById('upgradeButton').innerText = `Купити апгрейд (+${[1, 2, 5, 10][upgradeLevel]} за ${upgradeCosts[upgradeLevel]} грн)`;
+                } else {
+                    document.getElementById('upgradeButton').style.display = 'none';
+                    document.getElementById('autoclickerButton').style.display = 'inline';
+                }
+            }
+        }
+
+        function buyAutoclicker() {
+            const autoclickerCost = 1000; // Вартість автоклікера
+            if (moneyCount >= autoclickerCost && !autoclickerActive) {
+                moneyCount -= autoclickerCost;
+                document.getElementById('moneyCount').innerText = moneyCount;
+                autoclickerActive = true;
+                startAutoclicker();
+                document.getElementById('autoclickerButton').style.display = 'none'; // Сховати кнопку автоклікера
+            }
+        }
+
+        function startAutoclicker() {
+            autoclickerInterval = setInterval(() => {
+                const clickAmounts = [1, 2, 5, 10]; // Кількість грошей за автоклік
+                const amount = clickAmounts[upgradeLevel] || 1; // За умовчанням +1
+                moneyCount += amount;
+                document.getElementById('moneyCount').innerText = moneyCount;
+            }, 1000); // Кліки кожну секунду
+        }
+
+        function feedDragon(cost) {
+            if (moneyCount >= cost) {
+                moneyCount -= cost;
+                document.getElementById('moneyCount').innerText = moneyCount;
+
+                const healthGain = cost === 50 ? 20 : cost === 100 ? 50 : 100;
+                dragonHealth += healthGain;
+                document.getElementById('dragonHealth').innerText = dragonHealth;
+
+                resetDragonFeedTimer();
+            }
+        }
+
+        function resetDragonFeedTimer() {
+            clearTimeout(dragonFeedTimer);
+            dragonFeedTimer = setTimeout(() => {
+                dragonHealth = 0;
+                document.getElementById('dragonHealth').innerText = dragonHealth;
+                alert("Поразка! Дракон помер.");
+            }, 180000); // 3 хвилини
+        }
+
+        function updateImage() {
+            const images = [
+                "C:\\Users\\User\\Downloads\\1грн.jpg", // +1
+                "C:\\Users\\User\\Downloads\\2грн.jpg", // +2
+                "C:\\Users\\User\\Downloads\\5грн.jpg", // +5
+                "C:\\Users\\User\\Downloads\\10грн.jpg" // +10
+            ];
+            document.getElementById('clickableImage').src = images[upgradeLevel];
+        }
+
+        // Зменшуємо здоров'я дракона кожні 2 секунди
+        function startDragonHealthDecay() {
+            dragonHealthDecayInterval = setInterval(() => {
+                if (dragonHealth > 0) {
+                    dragonHealth--;
+                    document.getElementById('dragonHealth').innerText = dragonHealth;
+
+                    if (dragonHealth <= 0) {
+                        clearInterval(dragonHealthDecayInterval);
+                        alert("Поразка! Дракон помер.");
+                    }
+                }
+            }, 2000); // 2 секунди
+        }
+
+        // Запускаємо зменшення здоров'я дракона при завантаженні гри
+        startDragonHealthDecay();
+
+        document.getElementById('clickableImage').addEventListener('click', addCounter);
+    </script>
+</body>
+</html>
